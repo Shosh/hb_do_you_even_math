@@ -7,29 +7,27 @@ class Task():
     operators = ['+', '-', '^', 'x']
 
     def __init__(self):
-        self.first_number = self.get_random_n()
-        self.second_number = self.get_random_n()
-        self.operator = self.get_random_operator()
+        self.question = self.set_question(self.get_random_n(),
+                                          self.get_random_n(),
+                                          self.get_random_operator())
         self.answer = self.calculate_answer()
 
     def get_random_n(self):
-        return random.randint(Task.min_n, Task.max_n)
-
+        number = random.randint(Task.min_n, Task.max_n)
+        return str(number)
+        
     def get_random_operator(self):
         return random.choice(Task.operators)
 
     def calculate_answer(self):
-        if self.operator == '+':
-            return self.first_number + self.second_number
-        elif self.operator == '-':
-            return self.first_number - self.second_number
-        elif self.operator == '^':
-            return self.first_number ** self.second_number
-        elif self.operator == 'x':
-            return self.first_number * self.second_number
+        question = self.question
+        question = question.replace('x', '*')
+        question = question.replace('^', '**')
+        return eval(question)
 
-    def question(self):
-        return 'What is the answer to {} {} {}?'.format(self.first_number, self.operator, self.second_number)
+    def set_question(self, first, second, operator):
+        question = '{} {} {}'.format(first, operator, second)
+        return question
 
     def check_answer(self, user_answer):
         return self.answer == user_answer

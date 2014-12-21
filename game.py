@@ -6,6 +6,11 @@ from task import Task
 
 
 class Game():
+    messages = {'name': 'Your name: ',
+                'answer': '?> ',
+                'correct': 'Correct!',
+                'incorrect': 'Incorrect! Ending game. Your score is: ',
+                'question': 'What is the answer to '}
    
     def __init__(self):
         Base.metadata.create_all(engine)
@@ -14,46 +19,61 @@ class Game():
         self.player = None
         self.score = None
         
-    def calculate_score(self):
-        score = self.player.current_score
-        self.score = score * score
+    def calculate_score(self, current_score):
+        self.score = current_score * current_score
+        return self.score
 
-    def ask_for_name(self):
-        ui = input('Your name: ')
-        self.player = Player(ui)
-
-    def add_score(self, username, score):
+    def add_score_to_db(self, username, score):
         hscore = Score(user=username, score=score)
         self.session.add(hscore)
         self.session.commit()
 
     def show_top_ten(self):
-        result = self.session.query(Score).order_by(Score.score.desc()).limit(10)
+        result = self.session.query(Score)\
+                             .order_by(Score.score.desc())\
+                             .limit(10)
         return result
 
-    def ask_user(self):
-        user_input = input('?> ')
+    def is_input_valid(self, user_input):
         try:
-            user_input = int(user_input)
+            int(user_input)
         except ValueError:
-            return self.ask_user()
-        return user_input
+            return False
+        return True
+
+    def get_user_input(self, message):
+        uinput = input(message)
+        return uinput
+
+    def set_player(self, name):
+        self.player = Player(name)
         
+    def get_question(self, task_question):
+        return Game.messages['question'] + task_question + ' ?'
+
+    def get_incorrect(self, score):
+        return Game.messages['incorrect'] + str(score)
+
+    def printing(self, message):
+        print(message)
+
     def start(self):
-        self.ask_for_name()
+        name = self.get_user_input(Game.messages['name'])
+        self.set_player(name)
         playing = True
         while playing:
             t = Task()
-            print(t.question())
-            answer = self.ask_user()
-            if t.check_answer(answer):
+            self.printing(self.get_question(t.question))
+            answer = ''
+            while not self.is_input_valid(answer):
+                answer = self.get_user_input(Game.messages['answer'])
+            if t.check_answer(int(answer)):
                 self.player.current_score += 1
-                print('Correct!')
+                self.printing(Game.messages['correct'])
             else:
-                self.calculate_score()
-                print('Incorrect! Ending game. You score is: {}'
-                      .format(self.score))
-                self.add_score(self.player.name, self.score)
+                self.calculate_score(self.player.current_score)
+                self.printing(self.get_incorrect(self.score))
+                self.add_score_to_db(self.player.name, self.score)
                 break
                 
     def highscores(self):
